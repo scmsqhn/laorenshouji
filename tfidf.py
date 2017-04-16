@@ -1,3 +1,204 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""  
+Created on 2017-04-15 @author: haining.qin   
+"""    
+    
+import traceback
+import json
+import time            
+import re            
+import os    
+import sys  
+import codecs  
+import shutil  
+from sklearn import feature_extraction    
+from sklearn.feature_extraction.text import TfidfTransformer    
+from sklearn.feature_extraction.text import CountVectorizer  
+  
+''''' 
+sklearn里面的TF-IDF主要用到了两个函数：CountVectorizer()和TfidfTransformer()。 
+    CountVectorizer是通过fit_transform函数将文本中的词语转换为词频矩阵。 
+    矩阵元素weight[i][j] 表示j词在第i个文本下的词频，即各个词语出现的次数。 
+    通过get_feature_names()可看到所有文本的关键字，通过toarray()可看到词频矩阵的结果。 
+    TfidfTransformer也有个fit_transform函数，它的作用是计算tf-idf值。 
+'''  
+class FLAGS:
+  #定义簇分类的个数
+  def __init__(self, arg1, arg2, arg3):
+      self.CLUSTER_NUM = arg1
+      self.DEBUG = arg2
+      self.TEST = arg3
+  def set_flag_debug(self, arg0):
+      self.DEBUG = arg0
+  def set_flag_test(self, arg0):
+      self.TEST = arg0
+  def set_flag_cluster_num(self, arg0):
+      self.CLUSTER_NUM = arg0
+
+      
+#删除停用词，只保留非停用词
+def del_tingyong(line):
+# 输入为一行语料
+  finalword=""
+  words=line.split(" ")
+  for word in words:
+      flag=True
+      f=open('./data/input/ting_yong_ci.txt', 'r')
+      lines=f.readlines()
+      for line in lines:
+          if word.strip() in line.strip():
+              flag=False
+              break # 如在停用词表内，推出不加入
+      if flag:
+          finalword=finalword+word+" "      
+  #输入非停用词，一行
+  return finalword
+
+  
+if __name__ == "__main__":  
+    print u'#===========================================#\r\n'
+    print u'|                                           |\r\n'
+    print u'|                                           |\r\n'
+    print u'#===========================================#\r\n'
+    print u'===NEW RUNNING==='
+    flags = FLAGS(90, False, False)
+    flags.set_flag_debug(True)
+#    time.sleep(1000)
+
+    corpus = [] #文档语料 空格连接  
+  
+    #读取语料 一行语料为一个文档  
+    for line in open('./data/output/sample0001.txt', 'r').readlines():  
+        line = del_tingyong(line)
+        corpus.append(line.strip())  
+        # 将所有结果一次加入汇总
+    if flags.TEST:
+    # 打印汇总后的语料
+      [i.decode('utf8') for i in corpus]
+      for i in corpus:
+        try:
+          print(i)
+          print ('---')
+        except:
+          traceback.print_exc()
+
+    # 将文本中的词语转换为词频矩阵 矩阵元素
+    # a[i][j]表示j词在i类文本下的词频  
+    vectorizer = CountVectorizer()  
+    # 将文本转为词频矩阵  
+    juzhen = vectorizer.fit_transform(corpus)
+    if flags.TEST:
+      print type(juzhen)
+    # 该类会统计每个词语的tf-idf权值
+    # <class 'sklearn.feature_extraction.text.TfidfTransformer'>
+    transformer = TfidfTransformer()  
+    if flags.TEST:
+      print type(transformer)
+    # 计算tf-idf ,数据结构为
+    # <class 'scipy.sparse.csr.csr_matrix'>
+    tfidf = transformer.fit_transform(juzhen)
+    if flags.TEST:
+      print type(tfidf)
+  
+    #获取词袋模型中的所有词语    
+    word = vectorizer.get_feature_names()  
+    if flags.TEST:
+      [i.encode('utf8') for i in word]
+      for i in word:
+        print i
+  
+    # 将tf-idf矩阵抽取出来，
+    # 元素w[i][j]表示j词在i类文本中的tf-idf权重  
+    # 某个词在某句话中的权重
+    weight = tfidf.toarray()  
+  
+    resultName = "./data/output/tfidf_out0001.txt"  
+    result = codecs.open(resultName, 'w', 'utf-8')  
+    dicts={}
+    print 'word length is ', len(word)
+    for j in range(len(word)):  
+        dicts['id%d'%j] = j
+        dicts['word%d'%j] = word[j]
+        result.write(word[j] + ' ')  
+    result.write('\r\n\r\n')  
+    #打印每类文本的tf-idf词语权重，第一个for遍历所有文本，第二个for便利某一类文本下的词语权重    
+    for i in range(len(weight)):  
+        if flags.TEST:
+          print u'-----'
+          print u"这里输出第",i,u"类文本的词语tf-idf权重"    
+        for j in range(len(word)):
+            if flags.TEST:
+                print u'第 ',len(weight),u' 个文本，有 ',len(word),u' 个词'
+            if(str(weight[i][j])!='0.0'):        
+              if flags.TEST:
+                print word[j]
+                print(str(weight[i][j]) + ' ')
+              result.write(str(weight[i][j]) + ' ')  
+        result.write('\r\n\r\n')  
+    result.close()  
+    if flags.TEST:  
+        print u'一共有',len(weight),u'个文本'
+    
+    #第二步 聚类Kmeans  
+    f=open('./data/output/kmeans.txt','w')
+    f.write('Start Kmeans:')
+    print 'Start Kmeans:'  
+    from sklearn.cluster import KMeans  
+    # 提前设定分类簇数
+    clf = KMeans(n_clusters=flags.CLUSTER_NUM)
+    # 开始进行聚合分类
+    s = clf.fit(weight)  
+    # 打印分类结果
+    if flags.TEST:
+        print u"打印分类结果：" ,s  
+  
+    #打印中心点  
+    if flags.TEST:
+        print(u'===%d 个中心点'%flags.CLUSTER_NUM)
+        print(clf.cluster_centers_)  
+      
+    #每个样本所属的簇  
+    if flags.TEST:
+        print(u'打印每个样本所属的簇')
+        print(clf.labels_)
+    i = 1  
+    f.write('======\r\n')
+    while i <= len(clf.labels_):  
+        if flags.TEST:
+          print i, clf.labels_[i-1]  
+        dicts['clus%s'%i]=str(clf.labels_[i-1])
+        f.write(str(i))
+        f.write('\r\n')
+        f.write(str(clf.labels_[i-1]))
+        f.write('\r\n')
+        i = i + 1  
+    #用来评估簇的个数是否合适，距离越小说明簇分的越好，选取临界点的簇个数  
+    if flags.DEBUG:
+      print(u'===分簇是否合适===')
+      print(clf.inertia_)  
+    
+    if flags.TEST:
+      print(json.dumps(dicts))
+
+    for i in range(0,flags.CLUSTER_NUM):
+        if flags.DEBUG:
+          print(u'====簇分类%d'%i)
+        for j in range(0,len(dicts)):
+          try:
+            if dicts['clus%d'%j] == str(i):
+              if flags.DEBUG:
+                print(dicts['word%d'%j]+" ")
+          except:
+#            print traceback.print_exc()
+            continue
+
+    if flags.DEBUG:
+      print("write kmeans_final.txt")
+      h=open("./data/output/kmeans_final.txt",'w')
+      print(json.dumps(dicts))
+      h.write(json.dumps(dicts))
+      h.flush()
+      h.close()
+    
 
