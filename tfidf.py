@@ -57,12 +57,13 @@ def del_tingyong(line):
 
   
 if __name__ == "__main__":  
-    print u'#===========================================#\r\n'
-    print u'|                                           |\r\n'
-    print u'|                                           |\r\n'
-    print u'#===========================================#\r\n'
-    print u'===NEW RUNNING==='
-    flags = FLAGS(90, False, False)
+    print('#===========================================#\r\n')
+    print('|                                           |\r\n')
+    print('|                                           |\r\n')
+    print('#===========================================#\r\n')
+    print('===NEW RUNNING===')
+    
+    flags = SingleFlags.instance(90, False, False)
     flags.set_flag_debug(True)
 #    time.sleep(1000)
 
@@ -89,24 +90,24 @@ if __name__ == "__main__":
     # 将文本转为词频矩阵  
     juzhen = vectorizer.fit_transform(corpus)
     if flags.TEST:
-      print type(juzhen)
+      print((type(juzhen)))
     # 该类会统计每个词语的tf-idf权值
     # <class 'sklearn.feature_extraction.text.TfidfTransformer'>
     transformer = TfidfTransformer()  
     if flags.TEST:
-      print type(transformer)
+      print((type(transformer)))
     # 计算tf-idf ,数据结构为
     # <class 'scipy.sparse.csr.csr_matrix'>
     tfidf = transformer.fit_transform(juzhen)
     if flags.TEST:
-      print type(tfidf)
+      print((type(tfidf)))
   
     #获取词袋模型中的所有词语    
     word = vectorizer.get_feature_names()  
     if flags.TEST:
       [i.encode('utf8') for i in word]
       for i in word:
-        print i
+        print(i)
   
     # 将tf-idf矩阵抽取出来，
     # 元素w[i][j]表示j词在i类文本中的tf-idf权重  
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     resultName = "./data/output/tfidf_out0001.txt"  
     result = codecs.open(resultName, 'w', 'utf-8')  
     dicts={}
-    print 'word length is ', len(word)
+    print(('word length is ', len(word)))
     for j in range(len(word)):  
         dicts['id%d'%j] = j
         dicts['word%d'%j] = word[j]
@@ -125,25 +126,25 @@ if __name__ == "__main__":
     #打印每类文本的tf-idf词语权重，第一个for遍历所有文本，第二个for便利某一类文本下的词语权重    
     for i in range(len(weight)):  
         if flags.TEST:
-          print u'-----'
-          print u"这里输出第",i,u"类文本的词语tf-idf权重"    
+          print('-----')
+          print(("这里输出第",i,"类文本的词语tf-idf权重"))    
         for j in range(len(word)):
             if flags.TEST:
-                print u'第 ',len(weight),u' 个文本，有 ',len(word),u' 个词'
+                print(('第 ',len(weight),' 个文本，有 ',len(word),' 个词'))
             if(str(weight[i][j])!='0.0'):        
               if flags.TEST:
-                print word[j]
-                print(str(weight[i][j]) + ' ')
+                print((word[j]))
+                print((str(weight[i][j]) + ' '))
               result.write(str(weight[i][j]) + ' ')  
         result.write('\r\n\r\n')  
     result.close()  
     if flags.TEST:  
-        print u'一共有',len(weight),u'个文本'
+        print(('一共有',len(weight),'个文本'))
     
     #第二步 聚类Kmeans  
     f=open('./data/output/kmeans.txt','w')
     f.write('Start Kmeans:')
-    print 'Start Kmeans:'  
+    print('Start Kmeans:')  
     from sklearn.cluster import KMeans  
     # 提前设定分类簇数
     clf = KMeans(n_clusters=flags.CLUSTER_NUM)
@@ -151,22 +152,22 @@ if __name__ == "__main__":
     s = clf.fit(weight)  
     # 打印分类结果
     if flags.TEST:
-        print u"打印分类结果：" ,s  
+        print(("打印分类结果：" ,s))  
   
     #打印中心点  
     if flags.TEST:
-        print(u'===%d 个中心点'%flags.CLUSTER_NUM)
-        print(clf.cluster_centers_)  
+        print(('===%d 个中心点'%flags.CLUSTER_NUM))
+        print((clf.cluster_centers_))  
       
     #每个样本所属的簇  
     if flags.TEST:
-        print(u'打印每个样本所属的簇')
-        print(clf.labels_)
+        print('打印每个样本所属的簇')
+        print((clf.labels_))
     i = 1  
     f.write('======\r\n')
     while i <= len(clf.labels_):  
         if flags.TEST:
-          print i, clf.labels_[i-1]  
+          print((i, clf.labels_[i-1]))  
         dicts['clus%s'%i]=str(clf.labels_[i-1])
         f.write(str(i))
         f.write('\r\n')
@@ -175,20 +176,20 @@ if __name__ == "__main__":
         i = i + 1  
     #用来评估簇的个数是否合适，距离越小说明簇分的越好，选取临界点的簇个数  
     if flags.DEBUG:
-      print(u'===分簇是否合适===')
-      print(clf.inertia_)  
+      print('===分簇是否合适===')
+      print((clf.inertia_))  
     
     if flags.TEST:
-      print(json.dumps(dicts))
+      print((json.dumps(dicts)))
 
     for i in range(0,flags.CLUSTER_NUM):
         if flags.DEBUG:
-          print(u'====簇分类%d'%i)
+          print(('====簇分类%d'%i))
         for j in range(0,len(dicts)):
           try:
             if dicts['clus%d'%j] == str(i):
               if flags.DEBUG:
-                print(dicts['word%d'%j]+" ")
+                print((dicts['word%d'%j]+" "))
           except:
 #            print traceback.print_exc()
             continue
@@ -196,7 +197,7 @@ if __name__ == "__main__":
     if flags.DEBUG:
       print("write kmeans_final.txt")
       h=open("./data/output/kmeans_final.txt",'w')
-      print(json.dumps(dicts))
+      print((json.dumps(dicts)))
       h.write(json.dumps(dicts))
       h.flush()
       h.close()

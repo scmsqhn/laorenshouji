@@ -6,6 +6,12 @@ import re
 import itertools
 from collections import Counter
 
+def clean_str_4_json(string):
+    string = re.sub(r"true", '"True"', string)
+    string = re.sub(r"false", '"False"', string)
+    string = re.sub(r"none", '"None"', string)
+    string = re.sub(r"\\", r'\\\\', string)
+    return string
 
 def clean_str(string):
     """
@@ -21,7 +27,7 @@ def clean_str(string):
     string = re.sub(r"[\'\`\{\}\:\"\[\]\.\-\;\*\/\=]", " ", string)
     string = re.sub(r"[%\~\^\_\\]", " ", string)
     string = re.sub(r"  ", " ", string)
-    string = re.sub(u"[、？，。！～]", " ", string)
+    string = re.sub("[、？，。！～]", " ", string)
     string = re.sub(r"\'s", " \'s", string)
     string = re.sub(r"\'ve", " \'ve", string)
     string = re.sub(r"n\'t", " n\'t", string)

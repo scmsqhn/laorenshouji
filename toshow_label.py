@@ -3,7 +3,7 @@
 
 #//192.168.0.102/home/zean/lao_ren_shou_ji/toshow_label.py
 
-from flags import FLAGS
+from flags import SingleFlags
 import os    
 import sys  
 import codecs  
@@ -15,7 +15,7 @@ import time
 输入:BH_EntityName.txt Cluster_Result.txt 
 输出:ZBH_Cluster_Merge.txt ZBH_Cluster_Result.txt 
 '''  
-flags=FLAGS(90, False, False)
+flags=SingleFlags.instance(90, False, False)
 flags.set_flag_debug(True)
   
 source1 = open("./data/output/sample0001.txt",'r')  
@@ -31,7 +31,7 @@ names = source1.readlines()
 #总是多输出空格 故设置0 1使其输出一致  
 res = source2.readline()  
 for name in names:  
-    name = unicode(name.strip('\r\n'), "utf-8")  
+    name = str(name.strip('\r\n'))  
 #    print '===='
 #    print name
     res = source2.readline()  
@@ -55,7 +55,7 @@ while i < len(lable):
   
 # 第二部分 合并类簇 类1 ..... 类2 .....  
   
-#定义定长20字符串数组 对应20个类簇  
+#定义定长m字符串数组 对应m个类簇  m= flags.CLUSTER_NUM
 output = ['']*flags.CLUSTER_NUM
 result2 = codecs.open("./data/output/kmeans_toshow_2.txt", 'w', 'utf-8')  
   
@@ -64,7 +64,7 @@ i = 0
 while i < len(lable):
   if flags.DEBUG:
     output[lable[i]] += ' \r\n----' + content[i] + str(lable[i]) + ' \r\n----'
-    print output[lable[i]]
+    print((output[lable[i]]))
     i = i + 1
 
     
@@ -79,7 +79,7 @@ while i < flags.CLUSTER_NUM:
  #   print output[i]  
     result2.write(output[i] + '\r\n')  
     print('====')
-    print(output[i])
+    print((output[i]))
     result2.write('---\r\n')  
     i = i + 1  
 result2.close()  
